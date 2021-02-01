@@ -70,3 +70,5 @@ add_subdirectory(maxMallocSize)
 add_subdirectory(funcDisassemb)
 add_subdirectory(traverseCFG)
 add_subdirectory(loopAnalysis)
+add_subdirectory(registerUsage)
+

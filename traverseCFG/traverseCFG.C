@@ -9,12 +9,15 @@
 #include <vector>
 #include <unordered_map>
 #include <sstream>
+#include <iomanip>
 #include "CodeObject.h"
+#include "InstructionDecoder.h"
 #include "CFG.h"
 
 using namespace std;
 using namespace Dyninst;
 using namespace ParseAPI;
+using namespace InstructionAPI;
 
 int main(int argc, char * argv[])
 {
@@ -33,10 +36,14 @@ int main(int argc, char * argv[])
    
    // Print the control flow graph
    const CodeObject::funclist& all = co->funcs();
-   auto fit = all.begin();
+     auto fit = all.begin();
    for(int i = 0; fit != all.end(); ++fit, i++) { // i is index for clusters
       Function *f = *fit;
-      
+      InstructionDecoder decoder(f->isrc()->getPtrToInstruction(f->addr()),
+            InstructionDecoder::maxInstructionLength,
+            f->region()->getArch());
+
+   
       // Make a cluster for nodes of this function
       cout << "\t subgraph cluster_" << i 
            << " { \n\t\t label=\""
@@ -69,20 +76,26 @@ int main(int argc, char * argv[])
          cout << "\t\t\"" << hex << b->start() << dec << 
             "\";" << endl;
          
-         auto it = b->targets().begin();
-         for( ; it != b->targets().end(); ++it) {
-            if(!*it) continue;
+         auto edges = b->targets().begin();
+         for( ; edges != b->targets().end(); ++edges) {
+            if(!*edges) continue;
             std::string s = "";
-            if((*it)->type() == CALL)
+            if((*edges)->type() == CALL)
                s = " [color=blue]";
-            else if((*it)->type() == RET)
+            else if((*edges)->type() == RET)
                s = " [color=green]";
+            
+            Address branch_addr = ((*edges)->src()->end() -4 );
+
+            Instruction instr = decoder.decode(
+                    (unsigned char *) f->isrc()->getPtrToInstruction(branch_addr)
+                    );
 
             // Store the edges somewhere to be printed outside of the cluster
-            edgeoutput << "\t\"" 
-                       << hex << (*it)->src()->start()
+            edgeoutput  << "\t\"" 
+                       << hex << branch_addr << ":" << left <<setw(40) <<instr.format()
                        << "\" -> \""
-                       << (*it)->trg()->start()
+                       << (*edges)->trg()->start()
                        << "\"" << s << endl;
          }
       }
