@@ -85,13 +85,14 @@ int main(int argc, char * argv[])
             else if((*edges)->type() == RET)
                s = " [color=green]";
             
-            Address branch_addr = ((*edges)->src()->end() -4 );
+            Address branch_addr = (*edges)->src()->lastInsnAddr();
 
-            Instruction instr = decoder.decode(
+            Instruction instr = 
+                decoder.decode(
                     (unsigned char *) f->isrc()->getPtrToInstruction(branch_addr)
                     );
 
-            // Store the edges somewhere to be printed outside of the cluster
+           // Store the edges somewhere to be printed outside of the cluster
             edgeoutput  << "\t\"" 
                        << hex << branch_addr << ":" << left <<setw(40) <<instr.format()
                        << "\" -> \""
